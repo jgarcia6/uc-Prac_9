@@ -1,50 +1,48 @@
 ﻿#include <driver/timer.h>
 #include "myTimer.h"
+#include "myGpio.h"
  
-static volatile uint8_t SecFlag; 
-
-#define ALARM_VAL_US    10000 // TODO Fixme for 1 sec
-#define TIMER_DIVIDER   10000 // TODO Fixme for 1 sec
+static volatile uint8_t _millis = 0; 
 
 /* Timer interrupt service routine */
 static void IRAM_ATTR timer0Isr(void *ptr)
 {
     timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
     timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
-    SecFlag = 1;
+    _millis++;
+
+    // TODO
+    // Add logic for state machine that plays back the note array,
+    // inserting silence between notes, if needed, update Timer1 alarm value
+}
+
+/* Timer interrupt service routine */
+static void IRAM_ATTR timer1Isr(void *ptr)
+{
+    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_1);
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_1);
+    
+    // Toggle GPIO with myGpio functions
 }
 
 /* Timer group0 TIMER_0 initialization */
 static void timer0Init(void)
 {
-    // TODO Fixme : Use only Low level register 
-    esp_err_t ret;
-    timer_config_t config = {
-        .divider = TIMER_DIVIDER,
-        .counter_dir = TIMER_COUNT_UP,
-        .counter_en = TIMER_START,
-        .alarm_en = TIMER_ALARM_EN,
-        .intr_type = TIMER_INTR_LEVEL,
-        .auto_reload = 1,
-    };
-    ret = timer_init(TIMER_GROUP_0, TIMER_0, &config);
-    ret = timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
-    ret = timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, ALARM_VAL_US);
-    ret = timer_enable_intr(TIMER_GROUP_0, TIMER_0);
+    // TODO Use only Low level register to configure a 1ms tick
 
     /* Register an ISR handler */
     timer_isr_register(TIMER_GROUP_0, TIMER_0, timer0Isr, NULL, 0, NULL);
 }
 
-uint8_t timer0SecFlag ( void )
+void timer1Play(const struct note song[], uint16_t len)
 {
-   if( SecFlag )
-   {
-        SecFlag=0;
-        return 1;
-    }
-    else
-    { 
-        return 0;
-   }
+    /* Save song pointer and restart playback state machine */
+    timer_isr_register(TIMER_GROUP_0, TIMER_1, timer1Isr, NULL, 0, NULL);
+}
+
+/* Timer group0 TIMER_1 configuration */
+void IRAM_ATTR timer1FreqGen(uint16_t freq)
+{
+    // Use only Low level register to configure Timer 1
+    /* Register an ISR handler */
 }

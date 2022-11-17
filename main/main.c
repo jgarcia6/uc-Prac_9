@@ -12,38 +12,100 @@
 #define PC_UART_RX_PIN  (3)
 #define PC_UART_TX_PIN  (1)
 
-#define CLOCK_X_POS     5
-#define CLOCK_Y_POS     5
-
-struct
+const struct note ImperialMarch[] =
 {
-    uint32_t seconds:8;
-    uint32_t minutes:8;
-    uint32_t hours:8;
-}clockTime;
+    //for the sheet music see:
+    //http://www.musicnotes.com/sheetmusic/mtd.asp?ppn=MN0016254
+    //this is just a translation of said sheet music to frequencies / time in ms
+    //used TEMPO ms for a quart note
+    {a, TEMPO},
+    {a, TEMPO},
+    {a, TEMPO},
+    {f, TEMPO*3/4},
+    {cH, TEMPO*1/4},
 
+    {a, TEMPO},
+    {f, TEMPO*3/4},
+    {cH, TEMPO*1/4},
+    {a, TEMPO*2},
+    //first bit
 
-void clockInit(uint8_t hh, uint8_t mm, uint8_t ss)
-{
-    clockTime.hours = hh;
-    clockTime.minutes = mm;
-    clockTime.seconds = ss;
-}
+    {eH, TEMPO},
+    {eH, TEMPO},
+    {eH, TEMPO},
+    {fH, TEMPO*3/4},
+    {cH, TEMPO*1/4},
 
-void clockUpdate(void)
-{
-    // TODO Fixme: Add logic to count hours, minutes and seconds
-    clockTime.seconds++;
-}
+    {gS, TEMPO},
+    {f, TEMPO*3/4},
+    {cH, TEMPO*1/4},
+    {a, TEMPO*2},
+    //second bit...
 
-void clockDisplay(void)
-{
-    char str[10];
-    uartGotoxy(0,CLOCK_X_POS,CLOCK_Y_POS);
-    // TODO Fix me: Add HH:MM:SS print format
-    myItoa(clockTime.seconds,cad,10);
-    uartPuts(0,cad);
-}
+    {aH, TEMPO},
+    {a, TEMPO*3/4},
+    {a, TEMPO*1/4},
+    {aH, TEMPO},
+    {gSH, TEMPO/2},
+    {gH, TEMPO/2},
+
+    {fSH, TEMPO*1/4},
+    {fH, TEMPO*1/4},
+    {fSH, TEMPO/2},
+    {0,TEMPO/2},
+    {aS, TEMPO/2},
+    {dSH, TEMPO},
+    {dH, TEMPO/2},
+    {cSH, TEMPO/2},
+    //start of the interesting bit
+
+    {cH, TEMPO*1/4},
+    {b, TEMPO*1/4},
+    {cH, TEMPO/2},
+    {0,TEMPO/2},
+    {f, TEMPO*1/4},
+    {gS, TEMPO},
+    {f, TEMPO*3/4},
+    {a, TEMPO*1/4},
+
+    {cH, TEMPO},
+    {a, TEMPO*3/4},
+    {cH, TEMPO*1/4},
+    {eH, TEMPO*2},
+    //more interesting stuff (this doesn't quite get it right somehow)
+
+    {aH, TEMPO},
+    {a, TEMPO*3/4},
+    {a, TEMPO*1/4},
+    {aH, TEMPO},
+    {gSH, TEMPO/2},
+    {gH, TEMPO/2},
+
+    {fSH, TEMPO*1/4},
+    {fH, TEMPO*1/4},
+    {fSH, TEMPO/2},
+    {0,TEMPO/2},
+    {aS, TEMPO/2},
+    {dSH, TEMPO},
+    {dH, TEMPO/2},
+    {cSH, TEMPO/2},
+    //repeat... repeat
+
+    {cH, TEMPO*1/4},
+    {b, TEMPO*1/4},
+    {cH, TEMPO/2},
+    {0,TEMPO/2},
+    {f, TEMPO/2},
+    {gS, TEMPO},
+    {f, TEMPO*3/4},
+    {cH, TEMPO*1/4},
+
+    {a, TEMPO},
+    {f, TEMPO*3/4},
+    {c, TEMPO*1/4},
+    {a, TEMPO*2}
+    //and we're done
+};
 
 int app_main()
 {
@@ -52,18 +114,34 @@ int app_main()
     delayMs(500);
     uartClrScr(PC_UART_PORT);
 
+    // TODO: GPIO Init
     timer0Init();
-    clockInit(23,59,50);
-
-    while(1){ 
-        if( timer0SecFlag() ) 
-        { 
-            clockUpdate();
-            clockDisplay();
+    
+    while(1)
+    {
+        if (uartKbhit(0))
+        {
+            switch (uartGetchar(0))
+            {
+            case 'p':
+            case 'P': // Play Song
+                    timer1Play(ImperialMarch, sizeof(ImperialMarch)/sizeof(struct note));
+                    break;
+            /*
+            case 'n':
+            case 'N': //Next song
+                            break;
+            case 'b'
+            case 'B'://Previous song
+                            break;
+            */
+            default:
+                    break;
+            }
         }
-
         // Prevent watchdog fault
         delayMs(10);
-    } 
+    }
+
     return 0; 
 }
